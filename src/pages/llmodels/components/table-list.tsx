@@ -9,12 +9,12 @@ import SealTable from '@/components/seal-table';
 import { TableOrder } from '@/components/seal-table/types';
 import { PageAction } from '@/config';
 import { TABLE_SORT_DIRECTIONS } from '@/config/settings';
-import { PageActionType } from '@/config/types';
 import useBodyScroll from '@/hooks/use-body-scroll';
 import useExpandedRowKeys from '@/hooks/use-expanded-row-keys';
 import useTableRowSelection from '@/hooks/use-table-row-selection';
 import PageBox from '@/pages/_components/page-box';
 import useNoResourceResult from '@/pages/llmodels/hooks/use-no-resource-result';
+import useGranfanaLink from '@/pages/resources/hooks/use-grafana-link';
 import { handleBatchRequest } from '@/utils';
 import { DownOutlined, SearchOutlined, SyncOutlined } from '@ant-design/icons';
 import { useIntl, useNavigate, useSearchParams } from '@umijs/max';
@@ -59,7 +59,6 @@ import {
 import useFilterStatus from '../hooks/use-filter-status';
 import useFormInitialValues from '../hooks/use-form-initial-values';
 import useModelsColumns from '../hooks/use-models-columns';
-import AccessControlModal from './access-control-modal';
 import APIAccessInfoModal from './api-access-info';
 import DeployModal from './deploy-modal';
 import Instances from './instances';
@@ -165,6 +164,9 @@ const Models: React.FC<ModelsProps> = ({
     useFilterStatus({
       onStatusChange: onStatusChange
     });
+  const { goToGrafana } = useGranfanaLink({
+    type: 'model'
+  });
 
   const [apiAccessInfo, setAPIAccessInfo] = useState<any>({
     show: false,
@@ -195,17 +197,6 @@ const Models: React.FC<ModelsProps> = ({
   }>({
     url: '',
     status: ''
-  });
-  const [openAccessControlModal, setOpenAccessControlModal] = useState<{
-    open: boolean;
-    currentData: ListItem | null;
-    title: string;
-    action: PageActionType;
-  }>({
-    open: false,
-    currentData: null,
-    title: '',
-    action: PageAction.CREATE
   });
   const modalRef = useRef<any>(null);
 
@@ -475,14 +466,8 @@ const Models: React.FC<ModelsProps> = ({
           }
         });
       }
-
-      if (val === 'accessControl') {
-        setOpenAccessControlModal({
-          title: intl.formatMessage({ id: 'models.button.accessSettings' }),
-          action: PageAction.EDIT,
-          currentData: row,
-          open: true
-        });
+      if (val === 'metrics') {
+        goToGrafana(row);
       }
     } catch (error) {
       // ignore
@@ -589,14 +574,6 @@ const Models: React.FC<ModelsProps> = ({
       handleOnToggleExpandAll();
     }
   });
-
-  const handleCancelAccessControl = () => {
-    setOpenAccessControlModal({
-      ...openAccessControlModal,
-      currentData: null,
-      open: false
-    });
-  };
 
   const { noResourceResult } = useNoResourceResult({
     loadend: loadend,
@@ -800,13 +777,6 @@ const Models: React.FC<ModelsProps> = ({
           });
         }}
       ></APIAccessInfoModal>
-      <AccessControlModal
-        onCancel={handleCancelAccessControl}
-        title={openAccessControlModal.title}
-        open={openAccessControlModal.open}
-        currentData={openAccessControlModal.currentData}
-        action={openAccessControlModal.action}
-      ></AccessControlModal>
     </>
   );
 };
